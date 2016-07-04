@@ -1,0 +1,4 @@
+# Evernote API token (get a new one from: https://dev.evernote.com/doc/articles/dev_tokens.php)
+
+token = ''
+sandbox = false
