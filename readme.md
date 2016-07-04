@@ -25,7 +25,7 @@ Double click on the "Evernote Wildcard Tags Search.alfredworkflow" file in the r
 
 #Using this in daily workflows
 
-In alfred type: "tag <tag name>", the list of tags should update as you type.
+In alfred type: "tag {tag name}", the list of tags should update as you type.
 
 Once the list shows, select the one you want, this will populate it in the application you currently have open, you can use it to populate tags in evernote when you process items with tags.
 
