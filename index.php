@@ -43,7 +43,15 @@ if (strtolower($tagName) == 'refresh') {
 searchTag($db, $tagName);
 
 
+
 function searchTag($db, $tagName) {
+  // Lets get the list of ALL tags so we can get the parents hirarchy
+  $results = $db->query("SELECT * FROM tags");
+  $arrAllTags = array();
+  while ($row = $results->fetchArray()) {
+      $arrAllTags[$row['guid']] = $row;
+  }
+
   $stmt = $db->prepare("SELECT * FROM tags WHERE name LIKE :tag ORDER BY name ASC");
   $tagNameWild = "%$tagName%";
   $stmt->bindValue(':tag', $tagNameWild, SQLITE3_TEXT);
@@ -55,11 +63,12 @@ function searchTag($db, $tagName) {
 
   $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><items>";
 
-  $tagName = htmlspecialchars($tagName , ENT_XML1, 'UTF-8');
+
   while ($row = $results->fetchArray()) {
     // Make the output XML safe
-    $row['name'] = htmlspecialchars($row['name'] , ENT_XML1, 'UTF-8');
-    $xml.='<item uid="'.$row['guid'].'" arg="'.$row['name'].'" valid="YES" autocomplete="'.$row['name'].'" type="file:skipcheck"><title>'.$row['name'].'</title><subtitle>'.$tagName.'</subtitle><icon type="fileicon">'.__DIR__.'/icons/tag.png</icon></item>'."\n";
+    $parentsString = getParentsString($row, $arrAllTags);
+    $row['name'] = xmlSafeString($row['name']);
+    $xml.='<item uid="'.$row['guid'].'" arg="'.$row['name'].'" valid="YES" autocomplete="'.$row['name'].'" type="file:skipcheck"><title>'.$row['name'].'</title><subtitle>'.$parentsString.'</subtitle><icon type="fileicon">'.__DIR__.'/icons/tag.png</icon></item>'."\n";
   }
 
   $xml .= '</items>';
@@ -68,8 +77,19 @@ function searchTag($db, $tagName) {
 
 }
 
+function getParentsString($tag, $allTags) {
+  $returnValue = $tag['name'];
+
+  while ($tag['parentGuid'] != '') {
+    $returnValue = xmlSafeString($allTags[$tag['parentGuid']]['name']).' -> '.$returnValue;
+    $tag =  $allTags[$tag['parentGuid']];
+  }
+
+  return $returnValue;
+}
+
 function populateTagsTable($db, $config) {
-  //set this to false to use in production
+
   $db->exec("DELETE FROM tags");
 
   $client = new \Evernote\Client($config['token'], $config['sandbox']);
@@ -87,4 +107,8 @@ function populateTagsTable($db, $config) {
 
     $result = $stmt->execute();
   }
+}
+
+function xmlSafeString($string) {
+  return htmlspecialchars($string , ENT_XML1, 'UTF-8');
 }
